@@ -6,10 +6,6 @@ const PORT = 8080;
 
 app.use(cors());
 
-app.get("/api/home", (req, res) => {
-  res.json({ message: "Howdy!", people: ["It works!?!?!", "Jesse", "Autumn"] });
-});
-
 app.get("/weather", (req, res) => {
   axios
     .get(
@@ -26,6 +22,20 @@ app.get("/weather", (req, res) => {
       }).format(Date.now());
       const weatherData = { weather: response.data, timestamp: timestamp };
       res.json(weatherData);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+});
+
+app.get("/historical", (req, res) => {
+  axios
+    .get(
+      "https://api.open-meteo.com/v1/dwd-icon?latitude=52.52&longitude=13.41&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=GMT&past_days=5"
+    )
+    .then((response) => {
+      const historicalData = response.data;
+      res.json(historicalData);
     })
     .catch((error) => {
       console.log(error);
