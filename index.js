@@ -16,7 +16,14 @@ app.get("/weather", (req, res) => {
       "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current_weather=true"
     )
     .then((response) => {
-      const timestamp = Date.now();
+      const timestamp = new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }).format(Date.now());
       const weatherData = { weather: response.data, timestamp: timestamp };
       res.json(weatherData);
     })
