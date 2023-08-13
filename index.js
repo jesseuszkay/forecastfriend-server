@@ -18,7 +18,9 @@ db.run(`
     forecastImage TEXT,
     timestamp TEXT
   );
+`);
 
+db.run(`
   CREATE TABLE IF NOT EXISTS locations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     latitude REAL,
@@ -114,33 +116,49 @@ app.get("/weather", (_req, res) => {
 });
 
 app.get("/historical", (_req, res) => {
-  axios
-    .get(
-      "https://api.open-meteo.com/v1/dwd-icon?latitude=52.52&longitude=13.41&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=GMT&past_days=5"
-    )
-    .then((response) => {
-      const allWeatherData = response.data.daily;
-      const fiveDayWeather = [];
-      for (let i = 0; i < 5; i++) {
-        fiveDayWeather.push({
-          id: i,
-          temp_max: allWeatherData.temperature_2m_max[i],
-          temp_min: allWeatherData.temperature_2m_min[i],
-          date: allWeatherData.time[i],
-          weatherType: utils.convertWeatherCode(allWeatherData.weathercode[i]),
-          forecastImage: utils.getForecastImage(allWeatherData.weathercode[i]),
-        });
-      }
-      res.json(fiveDayWeather);
-    })
-    .catch((error) => {
-      console.log(error);
-    });
+  db.get("SELECT * FROM locations ORDER BY id DESC LIMIT 1", (err, row) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    if (!row) {
+      return res.status(400).json({ error: "No location data found" });
+    }
+
+    const { latitude, longitude } = row;
+
+    axios
+      .get(
+        `https://api.open-meteo.com/v1/dwd-icon?latitude=${latitude}&longitude=${longitude}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=GMT&past_days=5`
+      )
+      .then((response) => {
+        const allWeatherData = response.data.daily;
+        const fiveDayWeather = [];
+        for (let i = 0; i < 5; i++) {
+          fiveDayWeather.push({
+            id: i,
+            temp_max: allWeatherData.temperature_2m_max[i],
+            temp_min: allWeatherData.temperature_2m_min[i],
+            date: allWeatherData.time[i],
+            weatherType: utils.convertWeatherCode(
+              allWeatherData.weathercode[i]
+            ),
+            forecastImage: utils.getForecastImage(
+              allWeatherData.weathercode[i]
+            ),
+          });
+        }
+        res.json(fiveDayWeather);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  });
 });
 
 app.get("/snapshots", (_req, res) => {
-  const query =
-    "SELECT * FROM weather_snapshots ORDER BY timestamp DESC LIMIT 5";
+  const query = "SELECT * FROM weather_snapshots ORDER BY id DESC LIMIT 5";
 
   db.all(query, (err, rows) => {
     if (err) {
