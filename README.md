@@ -1,6 +1,6 @@
 ## How to use ForecastFriend
 
-Download a clone of this repository and the forecast-friend-client repository.
+Download a clone of this repository and the forecastfriend-client repository.
 
 Run "npm install" to download all dependencies on the client and server sides.
 
